@@ -1,4 +1,4 @@
-# Custom Cloudformation resource for deploying Pinpoint applications
+# Custom CloudFormation resource for deploying Pinpoint applications
 
 1. package the template
 
@@ -12,7 +12,7 @@ aws cloudformation package --template-file pinpoint-configuration.yml --output-t
 aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file output.yml --stack-name $STACK_NAME --parameter-overrides AppName=$APPLICATION_NAME 
 ```
 
-if you have a dead-letter SNS topic for queue for unrecoverable Lambda errors (recommended), add it as well to the parameter overrides
+if you have a dead-letter SNS topic for unrecoverable Lambda errors (optional but recommended), add it as well to the parameter overrides
 
 ```bash
 aws cloudformation deploy --capabilities CAPABILITY_IAM --template-file output.yml --stack-name $STACK_NAME --parameter-overrides AppName=$APPLICATION_NAME DLQSNSTopicARN=$SNS_TOPIC_ARN

@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Set up a Pinpoint application using CloudFormation 
+Parameters:
+  AppName: 
+    Type: String
+    Description: Pinpoint application name
+  DLQSNSTopicARN: 
+    Type: String
+    Description: Dead-letter SNS topic for Lambda
+    Default: ''
+
+Conditions:
+  IsDLQDefined: !Not [ !Equals ['', !Ref DLQSNSTopicARN]]
+
+Resources:
+  PinpointConfigurationLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: 'sts:AssumeRole'
+            Principal:
+              Service: lambda.amazonaws.com
+      Policies:
+        - PolicyName: WriteCloudWatchLogs
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement: 
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
+        - PolicyName: UpdatePinpoint
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'mobiletargeting:CreateApp'
+                  - 'mobiletargeting:DeleteApp'
+                Resource: '*'
+        - !If
+          - IsDLQDefined
+          - PolicyName: WriteDLQTopic
+            PolicyDocument: 
+              Version: '2012-10-17'
+              Statement: 
+                - Effect: Allow
+                  Action: 'sns:Publish'
+                  Resource: !Ref DLQSNSTopicARN
+          - !Ref AWS::NoValue
+
+  PinpointConfigurationLambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Runtime: nodejs8.10
+      Code: ./code 
+      Handler: lambda.handler
+      Role: !GetAtt PinpointConfigurationLambdaRole.Arn
+      Timeout: 300
+      DeadLetterConfig:
+        !If
+          - IsDLQDefined
+          - TargetArn: !Ref DLQSNSTopicARN
+          - !Ref AWS::NoValue
+
+  PinpointApp:
+    Type: 'Custom::PinpointApp'
+    Properties:
+      ServiceToken: !GetAtt PinpointConfigurationLambdaFunction.Arn
+      Name: !Ref AppName
+
+Outputs:
+  AppId:
+    Value: !GetAtt PinpointApp.Id

@@ -1,0 +1,11 @@
+{
+  "name": "@gojko/cloudformation-pinpoint",
+  "version": "1.0.0",
+  "description": "An example of cloudformation custom resource processing with AWS Pinpoint",
+  "keywords": [],
+  "author": "Gojko Adzic <gojko@gojko.com> (https://gojko.net)",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.358.0"
+  }
+}
